@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🚇 서울 지하철 AI 비서</title>
+  <meta name="description" content="서울 지하철 역별 승하차 인원 공공데이터를 분석하고, GPT 컨텍스트 주입 방식으로 맞춤형 AI 답변을 제공하는 웹 서비스" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ── 헤더 ─────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-logo">
+      <span>🚇</span>서울 지하철 AI 비서
+    </div>
+
+    <nav class="header-nav">
+      <button class="nav-btn active" id="nav-chat"    onclick="switchTab('chat')"   >💬 채팅</button>
+      <button class="nav-btn"        id="nav-data"    onclick="switchTab('data')"   >📋 데이터</button>
+      <button class="nav-btn"        id="nav-history" onclick="switchTab('history')">📜 대화 기록</button>
+      <button class="nav-btn"        id="nav-stats"   onclick="switchTab('stats')"  >📈 통계</button>
+    </nav>
+
+    <div class="header-actions">
+      <div class="cold-start-banner" id="cold-start-banner" style="display:none">
+        ⚠️ 서버 기동 중... 잠시 기다려 주세요
+      </div>
+      <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="다크/라이트 모드 전환">🌙</button>
+    </div>
+  </header>
+
+  <!-- ── 메인 콘텐츠 ────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- ① 채팅 탭 -->
+    <div class="tab-panel active" id="tab-chat">
+
+      <!-- 채팅 영역 -->
+      <div class="chat-main">
+        <div class="chat-messages" id="chat-messages">
+          <div class="msg assistant">
+            <div class="msg-avatar">🤖</div>
+            <div>
+              <div class="msg-bubble">
+                안녕하세요! 서울 지하철 AI 비서입니다. 🚇<br>
+                저장된 승하차 데이터를 기반으로 질문에 답변드립니다.<br>
+                <br>
+                <strong>예시 질문:</strong><br>
+                • 강남역 최근 이용객 추세는?<br>
+                • 이번 달 가장 붐빈 역은 어디야?<br>
+                • 주말 vs 평일 이용 패턴 차이는?
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <textarea
+            id="chat-input"
+            placeholder="질문을 입력하세요... (Shift+Enter: 줄바꿈, Enter: 전송)"
+            rows="2"
+          ></textarea>
+          <button class="btn btn-primary" id="send-btn" onclick="sendMessage()">
+            전송 ✈️
+          </button>
+        </div>
+      </div>
+
+      <!-- 사이드: 데이터 요약 -->
+      <div style="width:280px; flex-shrink:0; display:flex; flex-direction:column; gap:16px;">
+        <div class="card">
+          <div class="card-title">📊 현재 데이터 요약</div>
+          <div id="summary-panel">
+            <div style="color:var(--text-muted); text-align:center; padding:20px;">
+              로딩 중...
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" style="margin-top:12px; width:100%" onclick="loadSummary()">
+            🔄 새로고침
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">💡 Function Calling</div>
+          <div id="tools-log" style="font-size:0.8rem; color:var(--text-muted);">
+            AI가 도구를 사용하면 여기에 표시됩니다.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ② 데이터 관리 탭 -->
+    <div class="tab-panel" id="tab-data">
+      <div class="card">
+        <div class="card-title">➕ 새 데이터 추가</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">날짜</label>
+            <input type="date" id="data-date" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">승하차 합계 (명)</label>
+            <input type="number" id="data-value" class="form-input" placeholder="예: 182345" min="0" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">역명_노선</label>
+            <input type="text" id="data-memo" class="form-input" placeholder="예: 강남역_2호선" />
+          </div>
+          <button class="btn btn-primary" onclick="createData()">추가</button>
+        </div>
+      </div>
+
+      <div class="card" style="flex:1;">
+        <div class="section-header">
+          <div class="card-title" style="margin-bottom:0">📋 데이터 목록</div>
+          <div class="export-btns">
+            <button class="btn btn-secondary btn-sm" onclick="exportData('csv')">⬇️ CSV</button>
+            <button class="btn btn-secondary btn-sm" onclick="exportData('json')">⬇️ JSON</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadData()">🔄 새로고침</button>
+          </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>날짜</th>
+                <th>승하차 합계</th>
+                <th>역명_노선</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="data-tbody">
+              <tr><td colspan="4" class="empty-state">데이터를 불러오는 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ 대화 기록 탭 -->
+    <div class="tab-panel" id="tab-history">
+
+      <div class="conv-list">
+        <div class="section-header">
+          <div class="card-title" style="margin-bottom:0">📜 대화 목록</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadConversations()">🔄</button>
+        </div>
+        <div id="conv-list-container">
+          <div class="empty-state">로딩 중...</div>
+        </div>
+      </div>
+
+      <div class="conv-viewer" id="conv-viewer">
+        <div class="conv-empty">
+          <div>💬</div>
+          <div style="font-size:1rem;">대화를 선택하면 내용이 표시됩니다</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ④ 통계/시각화 탭 (보너스) -->
+    <div class="tab-panel" id="tab-stats">
+
+      <div class="summary-grid" id="stats-summary-grid">
+        <!-- JS로 채워짐 -->
+      </div>
+
+      <div class="card">
+        <div class="section-header">
+          <div class="card-title" style="margin-bottom:0">📈 월별 평균 승하차 추이</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadStats()">🔄 새로고침</button>
+        </div>
+        <div class="chart-container">
+          <canvas id="trend-chart"></canvas>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+        <div class="card">
+          <div class="card-title">🚉 노선별 평균 승하차</div>
+          <div class="chart-container" style="height:220px;">
+            <canvas id="line-chart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">📅 요일별 평균 승하차</div>
+          <div class="chart-container" style="height:220px;">
+            <canvas id="weekday-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── 수정 모달 ──────────────────────────────────────────── -->
+<div class="modal-overlay" id="edit-modal" style="display:none" onclick="closeEditModal(event)">
+  <div class="modal">
+    <div class="modal-title">✏️ 데이터 수정</div>
+    <input type="hidden" id="edit-id" />
+    <div class="form-group">
+      <label class="form-label">날짜</label>
+      <input type="date" id="edit-date" class="form-input" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">승하차 합계 (명)</label>
+      <input type="number" id="edit-value" class="form-input" min="0" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">역명_노선</label>
+      <input type="text" id="edit-memo" class="form-input" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEditModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 토스트 컨테이너 ────────────────────────────────────── -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
