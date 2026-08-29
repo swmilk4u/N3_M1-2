@@ -582,3 +582,78 @@ function formatDate(iso) {
     });
   } catch { return iso; }
 }
+
+// ── 공공데이터 동기화 ─────────────────────────────────────────
+function initSyncMonth() {
+  const input = document.getElementById('sync-month');
+  if (!input) return;
+  const now = new Date();
+  // 공공API는 보통 전월까지 반영 → 기본값을 전월로
+  now.setMonth(now.getMonth() - 1);
+  input.value = now.toISOString().slice(0, 7);
+}
+
+async function syncPublicData() {
+  const monthInput = document.getElementById('sync-month');
+  const syncBtn    = document.getElementById('sync-btn');
+  const resultEl   = document.getElementById('sync-result');
+
+  const targetMonth = monthInput?.value || '';  // 'YYYY-MM'
+
+  // 버튼 로딩 상태
+  syncBtn.disabled = true;
+  const originalHTML = syncBtn.innerHTML;
+  syncBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"
+         style="animation:spin 1s linear infinite">
+      <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+    </svg> 동기화 중...`;
+
+  resultEl.style.display = 'none';
+
+  try {
+    const query = targetMonth ? `?target_date=${targetMonth.replace('-', '')}` : '';
+    const data = await apiFetch(`/api/data/sync-public${query}`, { method: 'POST' });
+
+    resultEl.style.display = 'block';
+    const isSuccess = data.inserted > 0;
+    resultEl.className = `sync-result ${isSuccess ? 'sync-success' : 'sync-info'}`;
+    resultEl.innerHTML = `
+      <strong>${isSuccess ? '✅' : 'ℹ️'} ${data.message}</strong>
+      <div style="margin-top:6px; font-size:13px; opacity:0.8">
+        대상 연월: <strong>${data.target_ym}</strong>
+        &nbsp;|&nbsp; 추가: <strong>${data.inserted}건</strong>
+        &nbsp;|&nbsp; 스킵(중복): <strong>${data.skipped}건</strong>
+      </div>
+    `;
+
+    if (data.inserted > 0) {
+      showToast(`✅ ${data.inserted}건 공공데이터 추가 완료`, 'success');
+      loadData();   // 목록 새로고침
+      loadSummary(); // 요약 새로고침
+    } else {
+      showToast('ℹ️ 추가된 데이터가 없습니다 (모두 중복)', 'info');
+    }
+  } catch (err) {
+    resultEl.style.display = 'block';
+    resultEl.className = 'sync-result sync-error';
+    resultEl.innerHTML = `
+      <strong>❌ 동기화 실패</strong>
+      <div style="margin-top:6px; font-size:13px; opacity:0.85">${escapeHtml(err.message)}</div>
+      <div style="margin-top:6px; font-size:12px; opacity:0.65">
+        SEOUL_API_KEY 환경변수가 설정되어 있는지 확인하세요.
+        (<a href="https://data.seoul.go.kr" target="_blank" style="color:inherit">data.seoul.go.kr</a>에서 무료 발급)
+      </div>
+    `;
+    showToast('❌ 공공데이터 동기화 실패', 'error');
+  } finally {
+    syncBtn.disabled = false;
+    syncBtn.innerHTML = originalHTML;
+  }
+}
+
+// ── 초기화 ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initSyncMonth();
+});

@@ -1,5 +1,5 @@
 """
-routers/data.py — 데이터 API (CRUD 4 + summary 1 + statistics 1 + export 1)
+routers/data.py — 데이터 API (CRUD 4 + summary 1 + statistics 1 + export 1 + sync-public 1)
 """
 import csv
 import io
@@ -13,8 +13,72 @@ from fastapi.responses import StreamingResponse
 from models.schemas import DataCreate, DataItem, DataUpdate, StatisticsResponse, SummaryResponse
 from services.firestore import add_doc, delete_doc, get_all, get_one, update_doc
 from services.summary import compute_statistics, compute_summary
+from services.public_data import fetch_subway_stats
 
 router = APIRouter(prefix="/api/data", tags=["데이터 관리"])
+
+
+# ──────────────────────────────────────────────
+# POST /api/data/sync-public — 공공데이터 동기화
+# ──────────────────────────────────────────────
+
+@router.post("/sync-public", summary="공공데이터 동기화 (서울 열린데이터광장)")
+def sync_public_data(target_date: str = Query(
+    default="",
+    description="동기화할 연월 (YYYYMM). 미입력 시 이번 달."
+)):
+    """
+    서울 열린데이터광장 CardSubwayStatsNew API에서 지하철 승하차 데이터를 수집하여
+    Firestore에 저장합니다. 이미 존재하는 데이터(날짜+역명 동일)는 스킵합니다.
+
+    - SEOUL_API_KEY 환경변수 필요 (https://data.seoul.go.kr 에서 발급)
+    - 반환: { inserted, skipped, total, target_ym }
+    """
+    # 대상 연월 결정
+    if not target_date:
+        now = datetime.now(timezone.utc)
+        target_ym = now.strftime("%Y%m")
+    else:
+        target_ym = target_date.replace("-", "")[:6]
+
+    # 공공API에서 데이터 수집
+    try:
+        rows = fetch_subway_stats(target_ym)
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    if not rows:
+        return {"inserted": 0, "skipped": 0, "total": 0, "target_ym": target_ym,
+                "message": "해당 월 데이터가 없습니다. (공공API 반영 지연일 수 있음)"}
+
+    # 기존 데이터 키 셋 (날짜+역명) — 중복 방지
+    existing = get_all("data", order_by="date")
+    existing_keys = {(d["date"], d.get("memo", "")) for d in existing}
+
+    inserted = 0
+    skipped = 0
+
+    for row in rows:
+        key = (row["date"], row["memo"])
+        if key in existing_keys:
+            skipped += 1
+            continue
+        add_doc("data", {
+            **row,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        existing_keys.add(key)
+        inserted += 1
+
+    return {
+        "inserted": inserted,
+        "skipped": skipped,
+        "total": inserted + skipped,
+        "target_ym": target_ym,
+        "message": f"✅ {inserted}건 추가됨, {skipped}건 중복 스킵",
+    }
+
+
 
 
 # ──────────────────────────────────────────────

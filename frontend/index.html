@@ -207,7 +207,44 @@
     <div class="tab-panel" id="tab-data">
       <div class="tab-header">
         <h2 class="tab-title">데이터 관리</h2>
-        <p class="tab-desc">서울 지하철 역별 승하차 인원 데이터를 추가 · 조회 · 수정합니다.</p>
+        <p class="tab-desc">서울 지하철 역별 승하차 인원 데이터를 공공API에서 수집하거나 직접 추가합니다.</p>
+      </div>
+
+      <!-- 공공데이터 동기화 카드 -->
+      <div class="card sync-card">
+        <div class="sync-card-header">
+          <div class="card-title" style="margin-bottom:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
+              <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            서울 열린데이터광장 공공데이터 동기화
+          </div>
+          <span class="sync-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            서울시 공식 API
+          </span>
+        </div>
+        <p class="sync-desc">
+          서울 지하철 역별 승하차 인원 데이터를 공공API에서 자동 수집합니다.<br>
+          수집된 데이터는 Firestore에 저장되며 AI 채팅 분석에 활용됩니다.
+        </p>
+        <div class="sync-controls">
+          <div class="form-group" style="min-width:160px">
+            <label class="form-label">대상 연월</label>
+            <input type="month" id="sync-month" class="form-input" />
+          </div>
+          <button class="btn btn-accent" id="sync-btn" onclick="syncPublicData()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
+              <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            공공데이터 동기화
+          </button>
+        </div>
+        <div id="sync-result" class="sync-result" style="display:none"></div>
       </div>
 
       <div class="card">
