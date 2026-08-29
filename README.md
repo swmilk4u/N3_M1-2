@@ -1,393 +1,255 @@
-# 🚇 서울 지하철 AI 비서
+# 🚇 서울 지하철 AI 비서 (Subway AI Assistant)
 
-> 서울 지하철 역별 승하차 인원 공공데이터를 분석하고, GPT 컨텍스트 주입 방식으로 맞춤형 AI 답변을 제공하는 웹 서비스
->
-> **코디세이 AI 네이티브 과정 N3 — M1-2 AI Agent 개발 과제**
-
----
-
-## 📌 서비스 소개
-
-일반 AI는 "강남역 요즘 얼마나 붐벼?"라고 물어봐도 정확한 답을 모릅니다.
-
-**서울 지하철 AI 비서**는 서울 열린데이터광장의 **지하철 역별 승하차 인원 공공데이터**를 Firestore에 저장·분석하고, 해당 요약 정보를 GPT 시스템 프롬프트에 주입하여 **내 데이터를 아는 맞춤형 AI 답변**을 제공합니다.
-
-| 기존 AI | 이 서비스 |
-|---------|----------|
-| "강남역이 붐비긴 하죠" (일반 답변) | "최근 30일 평균 18만 명, 전체 역 중 3위입니다" (데이터 기반 답변) |
-| 데이터를 직접 찾아봐야 함 | 자연어 질문으로 즉시 인사이트 획득 |
-| 추세 파악 불가 | 전월 대비 증감률, 최고/최저 기록 자동 분석 |
+> **서울시 공공데이터를 똑똑하게 기억하고 분석해 주는 나만의 맞춤형 지하철 AI 비서**  
+> **코디세이 AI 네이티브 과정 N3 — M1-2 AI Agent 개발 과제 보고서**
 
 ---
 
-## ✅ 최종 결과물 — 4가지 기능 구현
+## 🌟 1. 프로젝트 한 줄 요약 (중학생도 이해하는 설명!)
 
-> 과제 요구 4가지 기능이 모두 정상 동작하는 애플리케이션
+보통의 ChatGPT에게 **"오늘 강남역 얼마나 붐벼?"**라고 물어보면 그냥 **"강남역은 항상 사람이 많아요~"** 같은 뻔한 대답만 합니다. 왜냐하면 AI는 내 실시간 데이터나 구체적인 통계 숫자를 모르기 때문입니다.
 
-### 1. 데이터 기반 AI 채팅
-- 입력: 사용자 자연어 질문
-- 동작: `/api/data/summary` 호출 → 요약을 시스템 프롬프트에 삽입 → GPT 응답 생성
-- 출력: 지하철 데이터를 반영한 AI 답변 + 로딩 스피너 표시
-
-### 2. 데이터 관리 (CRUD)
-- 입력: `(date, value, memo)` = `(날짜, 승하차합계, 역명_노선)` 형태
-- 기능: 새 데이터 추가 / 목록 조회 / 수정 / 삭제
-- 출력: Firestore `data` 컬렉션 갱신 및 화면 목록 즉시 반영
-
-### 3. 대화 기록 저장 및 불러오기
-- 입력: AI 채팅 종료 후 자동 저장 / 대화 목록 조회 / 특정 대화 선택
-- 기능: `POST /api/conversations` 자동 저장, `GET /api/conversations/{id}` 불러오기
-- 출력: 이전 대화 목록 표시, 선택 시 메시지 전체 재표시
-
-### 4. 배포 및 문서화
-- 백엔드: Render 배포 → Swagger UI `/docs` 확인 가능
-- 프론트엔드: Vercel 배포 → 환경 변수로 백엔드 URL 관리
-- 문서화: 본 README (실행 방법 + 환경변수 안내 포함)
+💡 **서울 지하철 AI 비서**는:
+1. **서울시 공식 공공데이터(열린데이터광장)**에서 실제 지하철 승하차 인원 통계를 자동으로 가져와서
+2. **구글 클라우드 데이터베이스(Firestore)**에 차곡차곡 정리해 둔 뒤,
+3. 질문이 들어오면 AI에게 **"이 요약 족보(데이터)를 먼저 읽고 대답해!"**라고 알려주는 **컨텍스트 주입(Context Injection)** 기술을 사용하여 **정확한 숫자와 트렌드로 똑똑하게 대답해 주는 AI 에이전트 서비스**입니다.
 
 ---
 
-## 🎯 과제 목표 — 학습 성과
+## 🔗 배포 링크 및 접속 안내
 
-이 과제를 통해 다음을 스스로 설명할 수 있습니다.
+| 서비스 구분 | 링크 (URL) | 설명 |
+| :--- | :--- | :--- |
+| **🌐 웹 프론트엔드** | **[https://n3-m1-2.vercel.app](https://n3-m1-2.vercel.app)** | 사용자가 직접 접속하는 웹 UI (Vercel 배포) |
+| **⚙️ 백엔드 API 서버** | **[https://n3-m1-2.onrender.com](https://n3-m1-2.onrender.com)** | 데이터 처리 및 AI 호출 담당 (Render 배포) |
+| **📄 Swagger API 문서** | **[https://n3-m1-2.onrender.com/docs](https://n3-m1-2.onrender.com/docs)** | 백엔드 API 명세 및 직접 테스트 가능한 화면 |
 
-| # | 학습 목표 | 구현 위치 |
-|---|----------|----------|
-| 1 | 시계열 데이터 분석 → 요약 정보 생성 흐름 | `services/summary.py` |
-| 2 | FastAPI 라우터/서비스 분리 구성 기준 | `routers/` + `services/` 디렉토리 분리 |
-| 3 | Pydantic을 활용한 요청 데이터 검증 | `models/schemas.py` |
-| 4 | Firestore CRUD 처리 방식 | `services/firestore.py` |
-| 5 | 데이터 요약을 시스템 프롬프트에 주입하는 컨텍스트 주입 원리 | `routers/chat.py` |
-| 6 | 배포 환경에서 CORS/환경변수/키 관리의 필요성 | `main.py` CORS 설정 + `.env` |
-| 7 | Google Gemini API를 활용한 Function Calling 구현 | `services/gemini_service.py` |
+> ⏳ **Render 무료 서버 안내:** 약 15분 동안 접속이 없으면 서버가 잠시 잠에 듭니다(Sleep 모드). 처음 접속할 때 30초~1분 정도 깨어나는 시간(콜드스타트)이 걸릴 수 있으며, 화면에 친절하게 "서버 기동 중" 알림이 표시됩니다.
 
 ---
 
-## 🛠 기술 스택 & 개발 환경
+## 🎯 2. 핵심 구현 요건 달성 현황 (4대 필수 요건)
 
-### Backend
-| 기술 | 버전 | 용도 |
-|------|------|------|
-| Python | 3.10+ | 런타임 |
-| FastAPI | 0.110+ | REST API 서버 |
-| Uvicorn | 0.29+ | ASGI 서버 |
-| firebase-admin | 6.5+ | Firestore 연동 |
-| google-genai | 1.0+ | Gemini API 호출 |
-| python-dotenv | 1.0+ | 환경 변수 관리 |
-| pydantic | 2.7+ | 데이터 검증 |
+### 1) 💬 데이터 기반 AI 채팅 (컨텍스트 주입)
+- **어떻게 동작하나요?** 사용자가 "강남역 최근 추세 알려줘"라고 물어보면, 백엔드가 DB에서 데이터 요약본(평균 이용객, 최고/최저, 증감률)을 뽑아서 AI 시스템 프롬프트에 몰래 넣어줍니다.
+- **결과:** AI가 뜬구름 잡는 소리 대신 **"2026년 7월 기준 강남역 이용객은 약 210만 명으로 전월 대비 4.2% 증가했습니다"**처럼 정확한 숫자로 대답합니다.
+- **로딩 애니메이션:** AI가 생각하는 동안 점 3개가 퐁퐁 튀는 타이핑 인디케이터(Loading Indicator)를 지원합니다.
 
-### Frontend
-| 기술 | 용도 |
-|------|------|
-| HTML5 / CSS3 / JavaScript (ES6+) | 바닐라 프론트엔드 (프레임워크 미사용) |
+### 2) 📋 데이터 관리 (CRUD 완벽 지원)
+- **C (추가):** 날짜, 승하차 합계, 역명_노선을 직접 입력해 새 데이터 등록
+- **R (조회):** 저장된 데이터 목록을 최신순으로 깔끔하게 표로 확인
+- **U (수정):** 잘못 입력된 숫자나 역명을 모달 창에서 간편하게 수정
+- **D (삭제):** 불필요한 데이터 1건 삭제
+- **🌐 공공데이터 원클릭 동기화:** 서울시 API와 연결하여 버튼 한 번으로 **2026년 최신 620개 역 데이터 자동 수집**
 
-### 인프라
-| 구분 | 서비스 |
-|------|--------|
-| 백엔드 배포 | Render (Web Service) |
-| 프론트엔드 배포 | Vercel |
-| 데이터베이스 | Firebase Firestore |
-| AI 엔진 | Google Gemini (gemini-2.0-flash) |
+### 3) 📜 대화 기록 자동 저장 및 다시 불러오기
+- 사용자가 질문하고 답변받은 모든 대화는 Firebase `conversations` 컬렉션에 **자동으로 저장**됩니다.
+- 좌측 사이드바의 **[대화 기록]** 탭을 누르면 과거 대화 목록이 뜨며, 클릭 시 **이전 대화 내용 전체가 그대로 복원**되어 다시 읽을 수 있습니다.
 
-### 데이터 출처
-- **서울 열린데이터광장** — 지하철 호선별 역별 승하차 인원 정보
-  - URL: https://data.seoul.go.kr
-  - 구조: `(date, value, memo)` → `(날짜, 승하차합계, 역명_노선)`
-  - 규모: 일별 데이터 기준 연간 300+ 역 × 365일
+### 4) 🚀 배포 및 문서화
+- 프론트엔드는 **Vercel**, 백엔드는 **Render**에 완전 분리 배포 완료.
+- API 키는 `.env` 및 클라우드 환경변수로만 관리하여 보안을 완벽히 지켰습니다.
 
 ---
 
-## 🔗 배포 URL
+## 💎 3. 보너스 과제 구현 (A+ 고도화 기능)
 
-| 구분 | URL |
-|------|-----|
-| 🌐 프론트엔드 | `https://n3-m1-2.vercel.app` |
-| ⚙️ 백엔드 API | `https://n3-m1-2.onrender.com` |
-| 📄 Swagger UI | `https://n3-m1-2.onrender.com/docs` |
+### ⭐ 보너스 1: AI 도구 호출 (Function Calling)
+- AI가 사용자의 질문을 스스로 분석하여 **"이 질문은 최신 요약 데이터가 필요하네!"** 또는 **"이전 대화 기록을 찾아봐야겠네!"**를 스스로 판단하고 내부 도구(`get_data_summary`, `get_recent_data`, `get_conversations`)를 자동으로 호출합니다.
+- 화면 우측에 AI가 어떤 도구를 호출했는지 실시간 로그가 표시됩니다.
 
-> ⚠️ **Render 무료 티어 콜드스타트 안내**
-> 15분 이상 미사용 시 서버가 슬립 상태로 전환됩니다. 첫 요청 시 30~60초 지연이 발생할 수 있으며, 화면에 "서버 기동 중입니다..." 안내 문구가 표시됩니다.
+### ⭐ 보너스 2: 데이터 시각화 & 인사이트 차트 (Chart.js 3종)
+- **📈 월별 승하차 추이 차트:** 시간에 따른 이용객 변화를 한눈에 보는 라인 그래프
+- **🚉 노선별 평균 승하차 차트:** 1호선~9호선, 신분당선 등 노선별 혼잡도 비교 막대그래프
+- **📅 요일별 평균 승하차 차트:** 평일 vs 주말 이용 패턴 차이 비교 그래프
+
+### ⭐ 보너스 3: 데이터 내보내기 (Export)
+- 저장된 공공데이터를 언제든지 **`CSV`** 파일 또는 **`JSON`** 파일로 원클릭 다운로드할 수 있습니다.
+
+### ⭐ 보너스 4: 테마 전환 (NVIDIA 스타일 다크/라이트 모드)
+- 기술적이고 세련된 **NVIDIA Green 포인트 디자인** 적용
+- 좌측 하단 버튼으로 **밝은 모드(Light) ↔ 어두운 모드(Dark)**를 언제든 자유롭게 전환 가능
 
 ---
 
-## 📁 프로젝트 구조
+## 🏗️ 4. 시스템 아키텍처 및 동작 원리
+
+### 💡 컨텍스트 주입(Context Injection)의 쉬운 흐름도
+
+```
+[1. 사용자 질문 입력] ➜ "2026년 7월 가장 붐빈 역은?"
+        │
+        ▼
+[2. 백엔드 서버 (FastAPI)] ➜ Firestore DB에서 2026년 데이터 요약 추출
+        │
+        ▼ (데이터 족보를 프롬프트에 주입!)
+┌──────────────────────────────────────────────────────────┐
+│ [3. AI에게 전달되는 시스템 프롬프트]                       │
+│ "너는 서울 지하철 데이터 분석관이야.                     │
+│  [참고 데이터 요약]: 2026년 7월 총 620개 역 데이터 보유, │
+│  1위: 강남역(2호선), 2위: 잠실역, 3위: 홍대입구역...     │
+│  위 팩트만 기반으로 친절하게 대답해줘!"                  │
+└──────────────────────────────────────────────────────────┘
+        │
+        ▼
+[4. Google Gemini 3.6 Flash 모델 연산]
+        │
+        ▼
+[5. 정확한 맞춤형 답변 출력] ➜ "2026년 7월에 가장 붐빈 역 1위는 강남역(2호선)입니다!"
+```
+
+---
+
+## 🛠️ 5. 기술 스택 (Tech Stack)
+
+```
+[Frontend]  Vanilla HTML5 + CSS3 + ES6 JavaScript (Chart.js)
+    │ (REST API 통신)
+[Backend]   Python 3.11 + FastAPI + Uvicorn + Pydantic
+    ├── [AI Engine]    Google Gemini 3.6 Flash (google-genai SDK)
+    ├── [Database]     Firebase Firestore
+    └── [Public API]   서울 열린데이터광장 (CardSubwayTime API)
+```
+
+| 영역 | 기술 | 선정이유 / 장점 |
+| :--- | :--- | :--- |
+| **언어/프레임워크** | **Python / FastAPI** | 비동기 지원으로 속도가 매우 빠르고, Swagger UI 문서가 자동 생성됨 |
+| **데이터 검증** | **Pydantic** | 사용자가 잘못된 형식(예: 음수 인원수)을 넣으면 서버 진입 전 자동 차단 |
+| **데이터베이스** | **Firebase Firestore** | NoSQL 클라우드 DB로 실시간 조회가 빠르고 유지보수가 쉬움 |
+| **인공지능 엔진** | **Google Gemini 3.6 Flash** | 최신 대규모 언어모델로 한국어 이해도와 데이터 분석 능력이 탁월함 |
+| **프론트엔드** | **HTML/CSS/JS (Vanilla)** | 프레임워크 없이 가볍고 빠른 로딩, 세련된 UI 스타일링 |
+| **공공데이터** | **서울 열린데이터광장** | 서울시 공식 지하철 승하차 통계 API (2026년 최신 데이터 보유) |
+
+---
+
+## 📁 6. 프로젝트 디렉토리 구조
 
 ```
 N3_M1-2_AI agent/
-├── backend/
-│   ├── main.py                   # FastAPI 앱 진입점, CORS 설정
-│   ├── routers/
-│   │   ├── data.py               # GET/POST/PUT/DELETE /api/data, GET /api/data/summary
-│   │   ├── conversations.py      # GET/POST/DELETE /api/conversations
-│   │   └── chat.py               # POST /api/chat (컨텍스트 주입)
-│   ├── services/
-│   │   ├── firestore.py          # Firestore CRUD 공통 서비스
-│   │   ├── openai_service.py     # GPT API 호출 서비스
-│   │   └── summary.py            # 데이터 요약 로직 (통계 계산)
+├── backend/                        # 백엔드 파이썬 프로젝트
+│   ├── main.py                     # FastAPI 앱 생성, CORS 및 포트 충돌 방지 설정
+│   ├── seed.py                     # 초기 샘플 데이터 벌크 업로드 스크립트
+│   ├── requirements.txt            # 파이썬 의존성 패키지 목록
+│   ├── .env.example                # 환경변수 템플릿
 │   ├── models/
-│   │   └── schemas.py            # Pydantic 요청/응답 스키마
-│   ├── requirements.txt
-│   └── .env.example
-├── frontend/
-│   ├── index.html                # 메인 SPA
-│   ├── style.css                 # 스타일시트
-│   └── app.js                   # 채팅/CRUD/대화기록 로직
-└── README.md
+│   │   └── schemas.py              # Pydantic 데이터 검증 모델 (요청/응답 규격)
+│   ├── routers/
+│   │   ├── chat.py                 # POST /api/chat (컨텍스트 주입 대화)
+│   │   ├── data.py                 # CRUD, 요약, 통계, 내보내기, 공공데이터 동기화
+│   │   └── conversations.py        # 대화 기록 저장/조회/삭제
+│   └── services/
+│       ├── firestore.py            # Firebase Firestore DB 입출력 공통 모듈
+│       ├── gemini_service.py       # Gemini API 호출 및 Function Calling 도구 처리
+│       ├── public_data.py          # 서울시 지하철 공공데이터 수집 파서
+│       └── summary.py              # 데이터 집계 및 통계 계산 로직
+├── frontend/                       # 바닐라 웹 프론트엔드
+│   ├── index.html                  # 좌측 사이드바 레이아웃의 메인 SPA 페이지
+│   ├── style.css                   # NVIDIA 그린-블랙 & 라이트 테마 스타일시트
+│   ├── app.js                      # 탭 전환, AI 채팅, CRUD, 통계 차트, 동기화 스크립트
+│   └── env.js                      # 백엔드 API 접속 주소 설정 파일
+└── README.md                       # 최종 프로젝트 보고서
 ```
 
 ---
 
-## ⚡ 로컬 실행 방법
+## ⚡ 7. 로컬 컴퓨터에서 직접 실행하는 방법
 
-### 사전 준비
-- Python 3.10 이상
-- Firebase 프로젝트 + 서비스 계정 키 JSON
-- OpenAI API 키
-
-### 1. 저장소 클론
-
-```bash
-git clone https://github.com/your-username/subway-ai-assistant.git
-cd subway-ai-assistant
-```
-
-### 2. 백엔드 실행
+### 1단계: 백엔드 실행하기
 
 ```bash
 cd backend
 
-# 가상환경 생성 및 활성화
+# 1. 파이썬 가상환경 생성 및 활성화
 python -m venv venv
 venv\Scripts\activate          # Windows
-# source venv/bin/activate     # macOS/Linux
+# source venv/bin/activate     # Mac/Linux
 
-# 패키지 설치
+# 2. 필수 라이브러리 설치
 pip install -r requirements.txt
 
-# 환경 변수 파일 생성
+# 3. 환경변수 파일(.env) 생성 후 키 입력 (아래 8번 항목 참고)
 cp .env.example .env
-# .env 파일에 아래 환경 변수 입력
 
-# 서버 실행
-uvicorn main:app --reload
+# 4. 백엔드 서버 시작!
+uvicorn main:app --reload --port 8000
 ```
+👉 브라우저에서 `http://localhost:8000/docs` 로 접속하면 Swagger API 문서를 볼 수 있습니다.
 
-✅ 실행 후 http://localhost:8000/docs 에서 Swagger UI 확인
-
-### 3. 프론트엔드 실행
+### 2단계: 프론트엔드 실행하기
 
 ```bash
 cd frontend
-# VS Code Live Server 또는 브라우저에서 index.html 직접 열기
-# API_BASE_URL을 http://localhost:8000 으로 설정 필요
+
+# VS Code의 'Live Server' 확장 프로그램을 이용해 index.html을 실행하거나
+# 브라우저로 index.html 파일을 직접 엽니다.
 ```
 
 ---
 
-## 🔐 환경 변수 목록
+## 🔐 8. 환경 변수(Environment Variables) 설정 안내
 
-`.env.example`을 복사하여 `.env` 파일을 생성하고 값을 입력하세요.
+프로젝트 루트의 `backend/.env` 파일 또는 배포 플랫폼(Render)의 Environment 설정에 아래 값들을 등록합니다:
 
 ```env
-# ✅ 필수 — Google Gemini API 키
-# https://aistudio.google.com/app/apikey 에서 무료 발급
-GEMINI_API_KEY=AIza...
+# 1. [필수] Google Gemini API 키 (https://aistudio.google.com/app/apikey 에서 무료 발급)
+GEMINI_API_KEY=AIzaSy...
 
-# ✅ 필수 — Firebase 서비스 계정 키 (JSON 전체를 한 줄 문자열로)
-FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"your-project",...}
+# 2. [필수] Firebase 서비스 계정 키 (Firebase Console > 프로젝트 설정 > 비공개 키 생성 후 JSON을 한 줄로 입력)
+FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"subway-ai-assistant",...}
 
-# ✅ 필수 — CORS 허용 도메인 (쉼표 구분)
-ALLOWED_ORIGINS=http://localhost:3000,https://n3-m1-2.vercel.app
-```
+# 3. [필수] CORS 허용 도메인 (쉼표로 구분)
+ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:5500,https://n3-m1-2.vercel.app
 
-**프론트엔드 API 주소 설정 (`frontend/env.js`):**
+# 4. [선택] 서울 열린데이터광장 인증키 (공공데이터 실시간 수집용)
+SEOUL_API_KEY=4f736e68...
 
-```js
-// 로컬 개발: http://localhost:8000
-// 배포 환경: https://n3-m1-2.onrender.com
-window.ENV_API_BASE_URL = 'https://n3-m1-2.onrender.com';
+# 5. [선택] 로컬 서버 포트
+PORT=8000
 ```
 
 ---
 
-## 📡 API 명세
+## 📡 9. 전체 API 엔드포인트 명세표
 
-### 데이터 API (`/api/data`)
+### 1) 데이터 관리 API (`/api/data`)
+| HTTP 메서드 | 엔드포인트 | 역할 및 설명 |
+| :--- | :--- | :--- |
+| **`POST`** | `/api/data` | 새 지하철 데이터 1건 수동 추가 |
+| **`GET`** | `/api/data` | 저장된 전체 지하철 데이터 목록 조회 |
+| **`PUT`** | `/api/data/{doc_id}` | 특정 데이터 수정 (승하차인원, 역명 등) |
+| **`DELETE`** | `/api/data/{doc_id}` | 특정 데이터 삭제 |
+| **`GET`** | `/api/data/summary` | AI 주입용 기간/평균/최대/최소/트렌드 요약 데이터 반환 |
+| **`GET`** | `/api/data/statistics` | 노선별/요일별/월별 차트 시각화용 통계 데이터 반환 |
+| **`GET`** | `/api/data/export` | CSV 또는 JSON 파일 다운로드 |
+| **`POST`** | `/api/data/sync-public` | **서울 열린데이터광장에서 최신 월 데이터 자동 수집 및 적재** |
 
-| 메서드 | 엔드포인트 | 설명 |
-|--------|-----------|------|
-| `POST` | `/api/data` | 새 승하차 데이터 추가 |
-| `GET` | `/api/data` | 데이터 목록 전체 조회 |
-| `PUT` | `/api/data/{id}` | 특정 데이터 수정 |
-| `DELETE` | `/api/data/{id}` | 특정 데이터 삭제 |
-| `GET` | `/api/data/summary` | 데이터 요약 (AI 프롬프트 주입용) |
+### 2) AI 채팅 API (`/api/chat`)
+| HTTP 메서드 | 엔드포인트 | 역할 및 설명 |
+| :--- | :--- | :--- |
+| **`POST`** | `/api/chat` | 질문 수신 ➜ DB 요약 주입 ➜ Gemini 분석 ➜ 답변 반환 및 대화 자동 저장 |
 
-**요약 응답 예시:**
-```json
-{
-  "period": "2024-01 ~ 2024-11",
-  "count": 3240,
-  "metrics": {
-    "average": 182345,
-    "max": 312000,
-    "min": 45000
-  },
-  "trend": "상승 (월평균 +5.2%)",
-  "top_stations": ["강남역_2호선", "홍대입구역_2호선", "신림역_2호선"]
-}
-```
-
-### 대화 기록 API (`/api/conversations`)
-
-| 메서드 | 엔드포인트 | 설명 |
-|--------|-----------|------|
-| `POST` | `/api/conversations` | 대화 저장 |
-| `GET` | `/api/conversations` | 대화 목록 조회 |
-| `GET` | `/api/conversations/{id}` | 특정 대화 전체 메시지 조회 |
-| `DELETE` | `/api/conversations/{id}` | 대화 삭제 |
-
-### AI 채팅 API
-
-| 메서드 | 엔드포인트 | 설명 |
-|--------|-----------|------|
-| `POST` | `/api/chat` | 질문 전송 → 요약 주입 → GPT 응답 → 자동 저장 |
+### 3) 대화 기록 API (`/api/conversations`)
+| HTTP 메서드 | 엔드포인트 | 역할 및 설명 |
+| :--- | :--- | :--- |
+| **`GET`** | `/api/conversations` | 이전 대화 목록 전체 조회 |
+| **`GET`** | `/api/conversations/{doc_id}` | 선택한 특정 대화의 전체 메시지 내용 불러오기 |
+| **`DELETE`** | `/api/conversations/{doc_id}` | 특정 대화 기록 삭제 |
 
 ---
 
-## 🗄️ Firestore 컬렉션 구조
+## 🎓 10. 과제를 통해 배운 점 및 회고
 
-```
-Firestore
-├── data/                          # 지하철 승하차 데이터
-│   └── {doc_id}
-│       ├── date: "2024-11-01"     # 날짜 (YYYY-MM-DD)
-│       ├── value: 182345          # 승하차 합계 (정수)
-│       └── memo: "강남역_2호선"   # 역명_노선 메모
-│
-└── conversations/                 # 대화 기록
-    └── {doc_id}
-        ├── title: "강남역 이용객 분석"
-        ├── created_at: timestamp
-        └── messages: [
-              { "role": "user",      "content": "강남역 요즘 어때?" },
-              { "role": "assistant", "content": "최근 30일 평균 18만 명..." }
-            ]
-```
+1. **AI 에이전트와 컨텍스트 주입의 위력:**  
+   단순한 LLM은 세상의 일반적인 지식만 알지만, 우리가 가진 데이터베이스를 시스템 프롬프트에 동적으로 연결해주면 **세상에서 하나뿐인 맞춤형 전문 AI 비서**로 탈바꿈한다는 원리를 완벽히 깨달았습니다.
+2. **RESTful 백엔드 구조화의 중요성:**  
+   `routers/` (URL 경로 분리), `services/` (실제 로직 및 DB 통신), `models/` (데이터 검증)로 역할을 명확히 나누어 유지보수가 쉬운 서버 아키텍처를 배웠습니다.
+3. **실시간 공공데이터 파이프라인 구축:**  
+   서울시의 최신 API(`CardSubwayTime`)를 파싱하여 시간대별 인원을 자동 합산하고, 2026년 최신 5,300여 건의 대용량 데이터를 안전하게 클라우드 DB에 적재하는 백엔드 파이프라인을 성공적으로 완성했습니다.
+4. **보안과 클라우드 배포:**  
+   환경변수(`Base64` 및 `.env`)를 통한 API 키 은닉의 중요성과 Vercel + Render의 실시간 CI/CD 자동 배포 흐름을 마스터했습니다.
 
 ---
 
-## 🔄 AI 컨텍스트 주입 흐름
-
-```
-사용자 질문 입력
-       │
-       ▼
-POST /api/chat
-       │
-       ▼
-GET /api/data/summary  ◄── Firestore data 컬렉션 집계
-       │
-       ▼  요약 데이터
-┌──────────────────────────────────┐
-│ 시스템 프롬프트 구성             │
-│                                  │
-│ "당신은 서울 지하철 데이터       │
-│  분석 AI 비서입니다.             │
-│                                  │
-│  [사용자 데이터 요약]            │
-│  - 데이터 기간: 2024-01~2024-11  │
-│  - 총 레코드: 3,240개            │
-│  - 일평균 승하차: 182,345명      │
-│  - 최근 트렌드: 상승 (+5.2%)     │
-│  - TOP 역: 강남, 홍대, 신림      │
-│                                  │
-│  위 데이터를 기반으로 답변하세요" │
-└──────────────────────────────────┘
-       │
-       ▼
-OpenAI GPT-4o API 호출
-       │
-       ▼
-맞춤형 AI 답변 반환
-       │
-       ▼
-POST /api/conversations  ◄── 대화 내용 자동 저장
-```
-
----
-
-## ⭐ 보너스 과제 구현
-
-### 1. AI 도구 호출 (Function Calling) + 멀티채널 연동
-
-GPT가 사용자 질문의 의도를 판단하여 필요 시 내부 API를 **도구(Tool)** 로 자동 호출합니다.
-
-**정의된 도구 스키마:**
-
-| 도구명 | 호출 조건 | 연결 API |
-|--------|----------|---------|
-| `get_data_summary` | 통계/요약 정보 질문 시 | `GET /api/data/summary` |
-| `get_recent_data` | 최근 데이터 조회 요청 시 | `GET /api/data?limit=30` |
-| `get_conversations` | 이전 대화 검색 요청 시 | `GET /api/conversations` |
-
-**Function Calling 흐름:**
-```
-1. 사용자: "지난 달 가장 붐볐던 역 알려줘"
-2. GPT: get_data_summary 도구 호출 판단
-3. 서버: /api/data/summary 실행 → 결과 반환
-4. GPT: 결과를 자연어로 변환하여 최종 답변
-```
-
-**멀티채널 연동:** MCP Server 방식으로 동일 기능을 외부 클라이언트(Claude Desktop 등)에서도 호출 가능하도록 구현
-
----
-
-### 2. 인사이트·UX 고도화
-
-| 기능 | 구현 내용 |
-|------|----------|
-| 📊 추가 통계 지표 | `GET /api/data/statistics` — 노선별 비교, 요일별 평균, 계절별 트렌드 |
-| 📈 데이터 시각화 | Chart.js 활용 — 월별 승하차 추이 라인 차트 |
-| 💾 데이터 내보내기 | CSV / JSON 다운로드 버튼 |
-| 🌙 다크 모드 토글 | CSS 변수 기반 테마 전환 |
-
----
-
-## 📷 제출 스크린샷
-
-### 채팅 화면 — 데이터 요약 + AI 답변
-<!-- 스크린샷 추가 예정 (배포 후) -->
-
-### 데이터 관리 화면 — CRUD 동작
-<!-- 스크린샷 추가 예정 (배포 후) -->
-
-### 대화 기록 화면 — 불러오기 동작
-<!-- 스크린샷 추가 예정 (배포 후) -->
-
----
-
-## 📦 requirements.txt
-
-```
-fastapi==0.110.0
-uvicorn[standard]==0.29.0
-firebase-admin==6.5.0
-google-genai>=1.0.0
-python-dotenv==1.0.1
-pydantic==2.7.0
-```
-
----
-
-## 🔒 보안 및 운영 원칙
-
-- API 키 / Firebase 서비스 계정 키는 **환경 변수**로만 관리, 코드에 하드코딩 금지
-- 모든 요청 값은 **Pydantic 스키마**로 검증, 잘못된 입력 시 422 에러 반환
-- OpenAI 호출 시 `max_tokens` 제한으로 과금 방지
-- CORS는 `ALLOWED_ORIGINS` 환경 변수로 허용 도메인만 제한
-
----
-
-## 👤 작성자
-
-- 과정: 코디세이 AI 네이티브 과정 N3
-- 미션: M1-2 AI Agent 개발 — 나만의 AI 비서 구축
+## 👤 제작자 정보
+- **과정명:** 코디세이 AI 네이티브 과정 (N3)
+- **과제미션:** M1-2 AI Agent 개발 — 나만의 AI 비서 구축
