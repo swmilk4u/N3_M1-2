@@ -36,7 +36,7 @@ def sync_public_data(target_date: str = Query(
     """
     # 대상 연월 결정
     if not target_date:
-        target_ym = "202512"
+        target_ym = "202607"
     else:
         target_ym = target_date.replace("-", "")[:6]
 

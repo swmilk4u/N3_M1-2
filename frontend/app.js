@@ -587,8 +587,8 @@ function formatDate(iso) {
 function initSyncMonth() {
   const input = document.getElementById('sync-month');
   if (!input) return;
-  // 서울 열린데이터광장 최신 집계월 기본값
-  input.value = '2025-12';
+  // 서울 열린데이터광장 최신 집계월 기본값 (2026년 7월)
+  input.value = '2026-07';
 }
 
 async function syncPublicData() {
