@@ -49,17 +49,20 @@
 }
 
 [data-theme="light"] {
-  --bg-primary:      #f4f4f6;
+  --bg-primary:      #f5f6f8;
   --bg-secondary:    #ffffff;
   --bg-card:         #ffffff;
-  --bg-hover:        #f0f0f3;
-  --bg-input:        #f7f7f9;
-  --border:          rgba(0, 0, 0, 0.08);
-  --border-hover:    rgba(118, 185, 0, 0.5);
-  --text-primary:    #111111;
-  --text-secondary:  #555555;
-  --text-muted:      #9a9a9a;
-  --shadow:          0 4px 20px rgba(0, 0, 0, 0.08);
+  --bg-hover:        #f0f1f4;
+  --bg-input:        #f8f9fb;
+  --border:          rgba(0, 0, 0, 0.09);
+  --border-hover:    rgba(118, 185, 0, 0.55);
+  --accent-dim:      rgba(118, 185, 0, 0.10);
+  --accent-glow:     rgba(118, 185, 0, 0.20);
+  --text-primary:    #0e0e0e;
+  --text-secondary:  #4a4a55;
+  --text-muted:      #9a9aaa;
+  --shadow:          0 2px 16px rgba(0, 0, 0, 0.07);
+  --shadow-accent:   0 0 20px rgba(118, 185, 0, 0.12);
 }
 
 /* ── 기본 리셋 ────────────────────────────────────────────── */
