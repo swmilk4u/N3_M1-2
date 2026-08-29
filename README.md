@@ -5,7 +5,7 @@
 
 ---
 
-## 🌟 1. 프로젝트 한 줄 요약 (중학생도 이해하는 설명!)
+## 🌟 1. 프로젝트 소개 및 개요
 
 보통의 ChatGPT에게 **"오늘 강남역 얼마나 붐벼?"**라고 물어보면 그냥 **"강남역은 항상 사람이 많아요~"** 같은 뻔한 대답만 합니다. 왜냐하면 AI는 내 실시간 데이터나 구체적인 통계 숫자를 모르기 때문입니다.
 
@@ -192,16 +192,16 @@ cd frontend
 
 ```env
 # 1. [필수] Google Gemini API 키 (https://aistudio.google.com/app/apikey 에서 무료 발급)
-GEMINI_API_KEY=AIzaSy...
+GEMINI_API_KEY=발급받은_Gemini_API_인증키_값
 
 # 2. [필수] Firebase 서비스 계정 키 (Firebase Console > 프로젝트 설정 > 비공개 키 생성 후 JSON을 한 줄로 입력)
-FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"subway-ai-assistant",...}
+FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"프로젝트_ID",...}
 
 # 3. [필수] CORS 허용 도메인 (쉼표로 구분)
 ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:5500,https://n3-m1-2.vercel.app
 
 # 4. [선택] 서울 열린데이터광장 인증키 (공공데이터 실시간 수집용)
-SEOUL_API_KEY=4f736e68...
+SEOUL_API_KEY=발급받은_서울열린데이터광장_인증키_값
 
 # 5. [선택] 로컬 서버 포트
 PORT=8000
@@ -248,8 +248,4 @@ PORT=8000
 4. **보안과 클라우드 배포:**  
    환경변수(`Base64` 및 `.env`)를 통한 API 키 은닉의 중요성과 Vercel + Render의 실시간 CI/CD 자동 배포 흐름을 마스터했습니다.
 
----
 
-## 👤 제작자 정보
-- **과정명:** 코디세이 AI 네이티브 과정 (N3)
-- **과제미션:** M1-2 AI Agent 개발 — 나만의 AI 비서 구축
