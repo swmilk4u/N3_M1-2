@@ -36,8 +36,7 @@ def sync_public_data(target_date: str = Query(
     """
     # 대상 연월 결정
     if not target_date:
-        now = datetime.now(timezone.utc)
-        target_ym = now.strftime("%Y%m")
+        target_ym = "202512"
     else:
         target_ym = target_date.replace("-", "")[:6]
 

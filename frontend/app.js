@@ -587,10 +587,8 @@ function formatDate(iso) {
 function initSyncMonth() {
   const input = document.getElementById('sync-month');
   if (!input) return;
-  const now = new Date();
-  // 공공API는 보통 전월까지 반영 → 기본값을 전월로
-  now.setMonth(now.getMonth() - 1);
-  input.value = now.toISOString().slice(0, 7);
+  // 서울 열린데이터광장 최신 집계월 기본값
+  input.value = '2025-12';
 }
 
 async function syncPublicData() {
