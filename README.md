@@ -130,8 +130,6 @@ N3_M1-2_AI agent/
 │   ├── index.html                # 메인 SPA
 │   ├── style.css                 # 스타일시트
 │   └── app.js                   # 채팅/CRUD/대화기록 로직
-├── 01_document/
-│   └── N3_M1-2 과제미션.txt
 └── README.md
 ```
 

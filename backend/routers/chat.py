@@ -4,7 +4,7 @@ routers/chat.py — AI 채팅 API (컨텍스트 주입 + 자동 저장 + Functio
 from fastapi import APIRouter, HTTPException
 
 from models.schemas import ChatRequest, ChatResponse, ConversationCreate, MessageSchema
-from services.openai_service import chat_with_context
+from services.gemini_service import chat_with_context
 from services.summary import compute_summary
 from services.firestore import add_doc, get_one
 from datetime import datetime, timezone
