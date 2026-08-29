@@ -2,6 +2,7 @@
 firestore.py — Firebase Admin SDK 초기화 및 Firestore CRUD 공통 서비스
 지연 초기화(lazy init): 서버 기동 시가 아닌 첫 DB 호출 시 Firebase를 초기화합니다.
 """
+import base64
 import json
 import os
 from typing import Any, Optional
@@ -27,11 +28,16 @@ def _get_db() -> Client:
         _db = firestore.client()
         return _db
 
-    service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+    # Base64 방식 우선 시도 (Render 붙여넣기 문제 근본 해결)
+    b64_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_B64")
+    if b64_json:
+        service_account_json = base64.b64decode(b64_json.strip()).decode("utf-8")
+    else:
+        service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+
     if not service_account_json:
         raise EnvironmentError(
-            "FIREBASE_SERVICE_ACCOUNT_JSON 환경 변수가 설정되지 않았습니다. "
-            ".env 파일을 확인하세요."
+            "FIREBASE_SERVICE_ACCOUNT_B64 또는 FIREBASE_SERVICE_ACCOUNT_JSON 환경 변수가 설정되지 않았습니다."
         )
 
     try:
