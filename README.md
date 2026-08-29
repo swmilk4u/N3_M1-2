@@ -58,6 +58,7 @@
 | 4 | Firestore CRUD 처리 방식 | `services/firestore.py` |
 | 5 | 데이터 요약을 시스템 프롬프트에 주입하는 컨텍스트 주입 원리 | `routers/chat.py` |
 | 6 | 배포 환경에서 CORS/환경변수/키 관리의 필요성 | `main.py` CORS 설정 + `.env` |
+| 7 | Google Gemini API를 활용한 Function Calling 구현 | `services/gemini_service.py` |
 
 ---
 
@@ -70,7 +71,7 @@
 | FastAPI | 0.110+ | REST API 서버 |
 | Uvicorn | 0.29+ | ASGI 서버 |
 | firebase-admin | 6.5+ | Firestore 연동 |
-| openai | 1.30+ | GPT API 호출 |
+| google-genai | 1.0+ | Gemini API 호출 |
 | python-dotenv | 1.0+ | 환경 변수 관리 |
 | pydantic | 2.7+ | 데이터 검증 |
 
@@ -85,7 +86,7 @@
 | 백엔드 배포 | Render (Web Service) |
 | 프론트엔드 배포 | Vercel |
 | 데이터베이스 | Firebase Firestore |
-| AI 엔진 | OpenAI GPT-4o |
+| AI 엔진 | Google Gemini (gemini-2.0-flash) |
 
 ### 데이터 출처
 - **서울 열린데이터광장** — 지하철 호선별 역별 승하차 인원 정보
@@ -99,9 +100,9 @@
 
 | 구분 | URL |
 |------|-----|
-| 🌐 프론트엔드 | `https://your-app.vercel.app` |
-| ⚙️ 백엔드 API | `https://your-api.onrender.com` |
-| 📄 Swagger UI | `https://your-api.onrender.com/docs` |
+| 🌐 프론트엔드 | `https://n3-m1-2.vercel.app` |
+| ⚙️ 백엔드 API | `https://n3-m1-2.onrender.com` |
+| 📄 Swagger UI | `https://n3-m1-2.onrender.com/docs` |
 
 > ⚠️ **Render 무료 티어 콜드스타트 안내**
 > 15분 이상 미사용 시 서버가 슬립 상태로 전환됩니다. 첫 요청 시 30~60초 지연이 발생할 수 있으며, 화면에 "서버 기동 중입니다..." 안내 문구가 표시됩니다.
@@ -187,21 +188,23 @@ cd frontend
 `.env.example`을 복사하여 `.env` 파일을 생성하고 값을 입력하세요.
 
 ```env
-# ✅ 필수 — OpenAI API 키
-OPENAI_API_KEY=sk-...
+# ✅ 필수 — Google Gemini API 키
+# https://aistudio.google.com/app/apikey 에서 무료 발급
+GEMINI_API_KEY=AIza...
 
-# ✅ 필수 — Firebase 서비스 계정 키 (JSON 전체를 문자열로)
+# ✅ 필수 — Firebase 서비스 계정 키 (JSON 전체를 한 줄 문자열로)
 FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"your-project",...}
 
 # ✅ 필수 — CORS 허용 도메인 (쉼표 구분)
-ALLOWED_ORIGINS=http://localhost:3000,https://your-app.vercel.app
+ALLOWED_ORIGINS=http://localhost:3000,https://n3-m1-2.vercel.app
 ```
 
-**Vercel 환경 변수 (프론트엔드):**
+**프론트엔드 API 주소 설정 (`frontend/env.js`):**
 
-```env
-# ✅ 필수 — 백엔드 서버 주소
-API_BASE_URL=https://your-api.onrender.com
+```js
+// 로컬 개발: http://localhost:8000
+// 배포 환경: https://n3-m1-2.onrender.com
+window.ENV_API_BASE_URL = 'https://n3-m1-2.onrender.com';
 ```
 
 ---
@@ -368,7 +371,7 @@ GPT가 사용자 질문의 의도를 판단하여 필요 시 내부 API를 **도
 fastapi==0.110.0
 uvicorn[standard]==0.29.0
 firebase-admin==6.5.0
-openai==1.30.0
+google-genai>=1.0.0
 python-dotenv==1.0.1
 pydantic==2.7.0
 ```
