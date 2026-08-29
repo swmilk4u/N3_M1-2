@@ -15,14 +15,21 @@ load_dotenv()
 # Firestore 초기화
 from services.firestore import _get_db, add_doc, get_all
 
+import sys
+import io
+
+# Windows 콘솔 인코딩 대응
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
 def seed():
     csv_path = Path(__file__).parent / "sample_data.csv"
     if not csv_path.exists():
-        print("❌ sample_data.csv 파일이 없습니다.")
+        print("[!] sample_data.csv 파일이 없습니다.")
         sys.exit(1)
 
     # 기존 Firestore 데이터의 (date, memo) 셋 — 중복 방지
-    print("🔍 기존 Firestore 데이터 조회 중...")
+    print("[*] 기존 Firestore 데이터 조회 중...")
     existing = get_all("data", order_by="date")
     existing_keys = {(d["date"], d.get("memo", "")) for d in existing}
     print(f"   기존 데이터: {len(existing_keys)}건")
@@ -33,7 +40,7 @@ def seed():
     inserted = 0
     skipped = 0
 
-    with open(csv_path, newline="", encoding="utf-8") as f:
+    with open(csv_path, newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         batch = db.batch()
         batch_count = 0
