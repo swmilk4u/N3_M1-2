@@ -3,49 +3,136 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🚇 서울 지하철 AI 비서</title>
-  <meta name="description" content="서울 지하철 역별 승하차 인원 공공데이터를 분석하고, GPT 컨텍스트 주입 방식으로 맞춤형 AI 답변을 제공하는 웹 서비스" />
-
-  <!-- Chart.js -->
+  <title>서울 지하철 AI 비서</title>
+  <meta name="description" content="서울 지하철 역별 승하차 인원 공공데이터를 분석하고, Gemini AI 컨텍스트 주입 방식으로 맞춤형 AI 답변을 제공하는 웹 서비스" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
 <div class="app-shell">
 
-  <!-- ── 헤더 ─────────────────────────────────────────────── -->
-  <header class="header">
-    <div class="header-logo">
-      <span>🚇</span>서울 지하철 AI 비서
+  <!-- ── 좌측 사이드바 ──────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <!-- 브랜드 -->
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22">
+          <path d="M3 12L12 3L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5 10V19H19V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 19V14H15V19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">서울 지하철</div>
+        <div class="brand-sub">AI 비서</div>
+      </div>
     </div>
 
-    <nav class="header-nav">
-      <button class="nav-btn active" id="nav-chat"    onclick="switchTab('chat')"   >💬 채팅</button>
-      <button class="nav-btn"        id="nav-data"    onclick="switchTab('data')"   >📋 데이터</button>
-      <button class="nav-btn"        id="nav-history" onclick="switchTab('history')">📜 대화 기록</button>
-      <button class="nav-btn"        id="nav-stats"   onclick="switchTab('stats')"  >📈 통계</button>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">MENU</div>
+
+    <!-- 네비게이션 -->
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" id="nav-chat" onclick="switchTab('chat')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span class="nav-label">채팅</span>
+        <span class="nav-tag">AI</span>
+      </button>
+
+      <button class="nav-btn" id="nav-data" onclick="switchTab('data')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="12" cy="5" rx="9" ry="3"/>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+        </svg>
+        <span class="nav-label">데이터</span>
+      </button>
+
+      <button class="nav-btn" id="nav-history" onclick="switchTab('history')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span class="nav-label">대화 기록</span>
+      </button>
+
+      <button class="nav-btn" id="nav-stats" onclick="switchTab('stats')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span class="nav-label">통계</span>
+      </button>
     </nav>
 
-    <div class="header-actions">
-      <div class="cold-start-banner" id="cold-start-banner" style="display:none">
-        ⚠️ 서버 기동 중... 잠시 기다려 주세요
-      </div>
-      <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="다크/라이트 모드 전환">🌙</button>
-    </div>
-  </header>
+    <div class="sidebar-spacer"></div>
 
-  <!-- ── 메인 콘텐츠 ────────────────────────────────────────── -->
+    <!-- 콜드스타트 배너 -->
+    <div class="cold-start-banner" id="cold-start-banner" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink:0">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      서버 기동 중...
+    </div>
+
+    <!-- 사이드바 하단 -->
+    <div class="sidebar-footer">
+      <div class="sidebar-divider" style="margin-bottom:12px"></div>
+      <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="다크/라이트 모드 전환">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <span>테마 전환</span>
+      </button>
+      <div class="sidebar-status">
+        <span class="status-dot"></span>
+        <span class="status-text">시스템 정상</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── 메인 콘텐츠 ──────────────────────────────────────────── -->
   <main class="main-content">
 
     <!-- ① 채팅 탭 -->
     <div class="tab-panel active" id="tab-chat">
 
-      <!-- 채팅 영역 -->
+      <!-- 채팅 메인 영역 -->
       <div class="chat-main">
+
+        <!-- 채팅 헤더 -->
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <div class="chat-header-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              AI 채팅
+            </div>
+            <div class="chat-header-sub">Gemini 3.6 Flash 기반 데이터 분석</div>
+          </div>
+          <div class="chat-header-badge">
+            <span class="live-dot"></span> LIVE
+          </div>
+        </div>
+
+        <!-- 메시지 영역 -->
         <div class="chat-messages" id="chat-messages">
           <div class="msg assistant">
-            <div class="msg-avatar">🤖</div>
+            <div class="msg-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 12h8M12 8l4 4-4 4"/>
+              </svg>
+            </div>
             <div>
               <div class="msg-bubble">
                 안녕하세요! 서울 지하철 AI 비서입니다. 🚇<br>
@@ -60,6 +147,7 @@
           </div>
         </div>
 
+        <!-- 입력창 -->
         <div class="chat-input-area">
           <textarea
             id="chat-input"
@@ -67,28 +155,48 @@
             rows="2"
           ></textarea>
           <button class="btn btn-primary" id="send-btn" onclick="sendMessage()">
-            전송 ✈️
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+            전송
           </button>
         </div>
       </div>
 
-      <!-- 사이드: 데이터 요약 -->
-      <div style="width:280px; flex-shrink:0; display:flex; flex-direction:column; gap:16px;">
+      <!-- 우측 사이드: 데이터 요약 + Function Calling -->
+      <div class="chat-side">
         <div class="card">
-          <div class="card-title">📊 현재 데이터 요약</div>
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/>
+            </svg>
+            현재 데이터 요약
+          </div>
           <div id="summary-panel">
-            <div style="color:var(--text-muted); text-align:center; padding:20px;">
+            <div class="loading-state">
+              <div class="loading-bar"></div>
               로딩 중...
             </div>
           </div>
-          <button class="btn btn-secondary btn-sm" style="margin-top:12px; width:100%" onclick="loadSummary()">
-            🔄 새로고침
+          <button class="btn btn-secondary btn-sm" style="margin-top:14px; width:100%" onclick="loadSummary()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+              <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            새로고침
           </button>
         </div>
 
         <div class="card">
-          <div class="card-title">💡 Function Calling</div>
-          <div id="tools-log" style="font-size:0.8rem; color:var(--text-muted);">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Function Calling
+          </div>
+          <div id="tools-log" class="tools-log-empty">
             AI가 도구를 사용하면 여기에 표시됩니다.
           </div>
         </div>
@@ -97,8 +205,18 @@
 
     <!-- ② 데이터 관리 탭 -->
     <div class="tab-panel" id="tab-data">
+      <div class="tab-header">
+        <h2 class="tab-title">데이터 관리</h2>
+        <p class="tab-desc">서울 지하철 역별 승하차 인원 데이터를 추가 · 조회 · 수정합니다.</p>
+      </div>
+
       <div class="card">
-        <div class="card-title">➕ 새 데이터 추가</div>
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          새 데이터 추가
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">날짜</label>
@@ -118,14 +236,25 @@
 
       <div class="card" style="flex:1;">
         <div class="section-header">
-          <div class="card-title" style="margin-bottom:0">📋 데이터 목록</div>
+          <div class="card-title" style="margin-bottom:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            데이터 목록
+          </div>
           <div class="export-btns">
-            <button class="btn btn-secondary btn-sm" onclick="exportData('csv')">⬇️ CSV</button>
-            <button class="btn btn-secondary btn-sm" onclick="exportData('json')">⬇️ JSON</button>
-            <button class="btn btn-secondary btn-sm" onclick="loadData()">🔄 새로고침</button>
+            <button class="btn btn-secondary btn-sm" onclick="exportData('csv')">↓ CSV</button>
+            <button class="btn btn-secondary btn-sm" onclick="exportData('json')">↓ JSON</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadData()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+            </button>
           </div>
         </div>
-
         <div style="overflow-x:auto;">
           <table class="data-table">
             <thead>
@@ -146,42 +275,54 @@
 
     <!-- ③ 대화 기록 탭 -->
     <div class="tab-panel" id="tab-history">
-
       <div class="conv-list">
         <div class="section-header">
-          <div class="card-title" style="margin-bottom:0">📜 대화 목록</div>
-          <button class="btn btn-secondary btn-sm" onclick="loadConversations()">🔄</button>
+          <div class="card-title" style="margin-bottom:0">대화 목록</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadConversations()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+              <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </button>
         </div>
         <div id="conv-list-container">
           <div class="empty-state">로딩 중...</div>
         </div>
       </div>
-
       <div class="conv-viewer" id="conv-viewer">
         <div class="conv-empty">
-          <div>💬</div>
+          <div style="font-size:2.5rem">💬</div>
           <div style="font-size:1rem;">대화를 선택하면 내용이 표시됩니다</div>
         </div>
       </div>
     </div>
 
-    <!-- ④ 통계/시각화 탭 (보너스) -->
+    <!-- ④ 통계 탭 -->
     <div class="tab-panel" id="tab-stats">
-
-      <div class="summary-grid" id="stats-summary-grid">
-        <!-- JS로 채워짐 -->
+      <div class="tab-header">
+        <h2 class="tab-title">데이터 통계</h2>
+        <p class="tab-desc">서울 지하철 승하차 인원의 트렌드와 패턴을 시각화합니다.</p>
       </div>
-
+      <div class="summary-grid" id="stats-summary-grid"></div>
       <div class="card">
         <div class="section-header">
-          <div class="card-title" style="margin-bottom:0">📈 월별 평균 승하차 추이</div>
-          <button class="btn btn-secondary btn-sm" onclick="loadStats()">🔄 새로고침</button>
+          <div class="card-title" style="margin-bottom:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            월별 평균 승하차 추이
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadStats()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+              <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </button>
         </div>
         <div class="chart-container">
           <canvas id="trend-chart"></canvas>
         </div>
       </div>
-
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
         <div class="card">
           <div class="card-title">🚉 노선별 평균 승하차</div>

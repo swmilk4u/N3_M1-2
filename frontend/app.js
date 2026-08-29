@@ -26,12 +26,11 @@ function switchTab(name) {
   if (name === 'stats')   loadStats();
 }
 
-// ── 다크/라이트 모드 ──────────────────────────────────────────
+// ── 다크/라이트 모드 ──────────────────────────────────────
 function toggleTheme() {
   const html = document.documentElement;
   const isDark = html.dataset.theme === 'dark';
   html.dataset.theme = isDark ? 'light' : 'dark';
-  document.getElementById('theme-toggle-btn').textContent = isDark ? '🌙' : '☀️';
   // 차트 색상 업데이트
   if (chartTrend) loadStats();
 }
