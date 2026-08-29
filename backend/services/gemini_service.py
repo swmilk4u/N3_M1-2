@@ -1,4 +1,4 @@
-﻿"""
+"""
 gemini_service.py -- Google Gemini API service (google.genai SDK)
 """
 import json
@@ -8,7 +8,7 @@ from typing import Optional
 from google import genai
 from google.genai import types
 
-MODEL      = "gemini-2.0-flash"
+MODEL      = "gemini-3.6-flash"
 MAX_TOKENS = 1024
 
 _client: Optional[genai.Client] = None
