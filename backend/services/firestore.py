@@ -34,7 +34,12 @@ def _get_db() -> Client:
             ".env 파일을 확인하세요."
         )
 
-    service_account_dict = json.loads(service_account_json)
+    try:
+        service_account_dict = json.loads(service_account_json)
+    except json.JSONDecodeError:
+        # Render UI 붙여넣기 시 private_key의 \n이 실제 줄바꿈으로 변환되는 문제 자동 복구
+        fixed_json = service_account_json.replace('\r\n', '\\n').replace('\n', '\\n')
+        service_account_dict = json.loads(fixed_json)
     cred = credentials.Certificate(service_account_dict)
     firebase_admin.initialize_app(cred)
     _db = firestore.client()
