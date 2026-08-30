@@ -4,12 +4,15 @@ firestore.py — Firebase Admin SDK 초기화 및 Firestore CRUD 공통 서비�
 """
 import base64
 import json
+import logging
 import os
 from typing import Any, Optional
 
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1 import Client
+
+logger = logging.getLogger("firestore")
 
 # ──────────────────────────────────────────────
 # Firebase 지연 초기화 (Lazy Init)
@@ -22,18 +25,33 @@ def _get_db() -> Client:
     """첫 호출 시 Firebase를 초기화하고 Firestore 클라이언트를 반환한다."""
     global _db
     if _db is not None:
+        logger.debug("Firestore 클라이언트 재사용 (이미 초기화됨)")
         return _db
 
     if firebase_admin._apps:
+        logger.info("Firebase 앱 이미 초기화됨 → 클라이언트 획득")
         _db = firestore.client()
         return _db
 
-    # Base64 방식 우선 시도 (Render 붙여넣기 문제 근본 해결)
-    b64_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_B64")
+    logger.info("Firebase 초기화 시작...")
+
+    # Base64 방식 우선 시도
+    b64_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_B64", "")
     if b64_json:
-        service_account_json = base64.b64decode(b64_json.strip()).decode("utf-8")
+        logger.info(f"[1/4] FIREBASE_SERVICE_ACCOUNT_B64 발견 (길이={len(b64_json)})")
+        try:
+            service_account_json = base64.b64decode(b64_json.strip()).decode("utf-8")
+            logger.info("[2/4] Base64 디코딩 성공")
+        except Exception as e:
+            logger.error(f"[2/4] Base64 디코딩 실패: {e}")
+            raise
     else:
-        service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+        logger.info("[1/4] B64 환경변수 없음 → JSON 방식 시도")
+        service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON", "")
+        if service_account_json:
+            logger.info(f"[1/4] FIREBASE_SERVICE_ACCOUNT_JSON 발견 (길이={len(service_account_json)})")
+        else:
+            logger.error("[1/4] FIREBASE_SERVICE_ACCOUNT_B64·JSON 모두 없음!")
 
     if not service_account_json:
         raise EnvironmentError(
@@ -42,13 +60,39 @@ def _get_db() -> Client:
 
     try:
         service_account_dict = json.loads(service_account_json)
-    except json.JSONDecodeError:
-        # Render UI 붙여넣기 시 private_key의 \n이 실제 줄바꿈으로 변환되는 문제 자동 복구
-        fixed_json = service_account_json.replace('\r\n', '\\n').replace('\n', '\\n')
-        service_account_dict = json.loads(fixed_json)
-    cred = credentials.Certificate(service_account_dict)
-    firebase_admin.initialize_app(cred)
-    _db = firestore.client()
+        logger.info(f"[2/4] JSON 파싱 성공 (project_id={service_account_dict.get('project_id')})")
+    except json.JSONDecodeError as e:
+        logger.warning(f"[2/4] JSON 파싱 1차 실패: {e} → \\n 이스케이프 복구 시도")
+        try:
+            fixed_json = service_account_json.replace('\r\n', '\\n').replace('\n', '\\n')
+            service_account_dict = json.loads(fixed_json)
+            logger.info(f"[2/4] JSON 파싱 복구 성공 (project_id={service_account_dict.get('project_id')})")
+        except json.JSONDecodeError as e2:
+            logger.error(f"[2/4] JSON 파싱 최종 실패: {e2}")
+            logger.error(f"      원본 앞 200자: {service_account_json[:200]}")
+            raise
+
+    try:
+        cred = credentials.Certificate(service_account_dict)
+        logger.info("[3/4] Firebase 자격증명 객체 생성 성공")
+    except Exception as e:
+        logger.error(f"[3/4] Firebase 자격증명 생성 실패: {e}")
+        raise
+
+    try:
+        firebase_admin.initialize_app(cred)
+        logger.info("[4/4] Firebase 앱 초기화 성공")
+    except Exception as e:
+        logger.error(f"[4/4] Firebase 앱 초기화 실패: {e}")
+        raise
+
+    try:
+        _db = firestore.client()
+        logger.info("✅ Firestore 클라이언트 생성 완료")
+    except Exception as e:
+        logger.error(f"Firestore 클라이언트 생성 실패: {e}")
+        raise
+
     return _db
 
 
