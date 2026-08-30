@@ -12,7 +12,7 @@ from fastapi.responses import StreamingResponse
 
 from models.schemas import DataCreate, DataItem, DataUpdate, StatisticsResponse, SummaryResponse
 from services.firestore import add_doc, delete_doc, get_all, get_one, update_doc
-from services.summary import compute_statistics, compute_summary
+from services.summary import compute_statistics, compute_summary, invalidate_cache
 from services.public_data import fetch_subway_stats
 
 router = APIRouter(prefix="/api/data", tags=["데이터 관리"])
@@ -69,6 +69,9 @@ def sync_public_data(target_date: str = Query(
         existing_keys.add(key)
         inserted += 1
 
+    if inserted > 0:
+        invalidate_cache()  # 새 데이터가 추가됐으므로 캐시 무효화
+
     return {
         "inserted": inserted,
         "skipped": skipped,
@@ -94,6 +97,7 @@ def create_data(body: DataCreate):
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     doc_id = add_doc("data", doc)
+    invalidate_cache()  # 캐시 무효화
     return DataItem(id=doc_id, **body.model_dump())
 
 
@@ -176,6 +180,7 @@ def update_data(doc_id: str, body: DataUpdate):
     if not ok:
         raise HTTPException(status_code=404, detail=f"문서를 찾을 수 없습니다: {doc_id}")
 
+    invalidate_cache()  # 캐시 무효화
     updated = get_one("data", doc_id)
     return DataItem(id=updated["id"], date=updated["date"], value=updated["value"], memo=updated["memo"])
 
@@ -190,3 +195,4 @@ def delete_data(doc_id: str):
     ok = delete_doc("data", doc_id)
     if not ok:
         raise HTTPException(status_code=404, detail=f"문서를 찾을 수 없습니다: {doc_id}")
+    invalidate_cache()  # 캐시 무효화
