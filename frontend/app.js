@@ -136,7 +136,7 @@ function appendMsg(role, content, tools = []) {
 
   el.innerHTML = `
     <div class="msg-avatar">${avatar}</div>
-    <div>
+    <div class="msg-body">
       <div class="msg-bubble">${escapeHtml(content).replace(/\n/g, '<br>')}</div>
       ${toolBadges ? `<div class="msg-tools">${toolBadges}</div>` : ''}
     </div>
@@ -152,9 +152,11 @@ function appendLoading() {
   el.className = 'msg assistant';
   el.innerHTML = `
     <div class="msg-avatar">🤖</div>
-    <div class="msg-bubble">
-      <div class="typing-indicator">
-        <span></span><span></span><span></span>
+    <div class="msg-body">
+      <div class="msg-bubble">
+        <div class="typing-indicator">
+          <span></span><span></span><span></span>
+        </div>
       </div>
     </div>
   `;
@@ -381,7 +383,9 @@ async function loadConversation(id) {
       ${conv.messages.map(m => `
         <div class="msg ${m.role}" style="margin-bottom:8px">
           <div class="msg-avatar">${m.role === 'user' ? '👤' : '🤖'}</div>
-          <div class="msg-bubble">${escapeHtml(m.content).replace(/\n/g, '<br>')}</div>
+          <div class="msg-body">
+            <div class="msg-bubble">${escapeHtml(m.content).replace(/\n/g, '<br>')}</div>
+          </div>
         </div>
       `).join('')}
     `;

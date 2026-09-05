@@ -444,13 +444,16 @@ body {
   display: flex;
   gap: 12px;
   animation: msgIn 0.22s ease;
+  width: 100%;
 }
 
 @keyframes msgIn {
   from { opacity: 0; transform: translateY(6px); }
 }
 
-.msg.user { flex-direction: row-reverse; }
+.msg.user {
+  flex-direction: row-reverse;
+}
 
 .msg-avatar {
   width: 34px;
@@ -466,12 +469,34 @@ body {
 .msg.user     .msg-avatar { background: var(--accent); color: #000; }
 .msg.assistant .msg-avatar { background: var(--bg-card); border: 1px solid var(--border); color: var(--accent); }
 
+/* 말풍선 감싸는 영역 */
+.msg-body,
+.msg > div:not(.msg-avatar) {
+  max-width: 75%;
+  display: flex;
+  flex-direction: column;
+}
+
+.msg.user .msg-body,
+.msg.user > div:not(.msg-avatar) {
+  align-items: flex-end;
+}
+
+.msg.assistant .msg-body,
+.msg.assistant > div:not(.msg-avatar) {
+  align-items: flex-start;
+}
+
 .msg-bubble {
-  max-width: 72%;
-  padding: 14px 18px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 12px 18px;
   border-radius: var(--radius);
-  line-height: 1.75;
-  font-size: 16px;
+  line-height: 1.65;
+  font-size: 15px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .msg.user .msg-bubble {
@@ -479,6 +504,8 @@ body {
   color: #050505;
   font-weight: 500;
   border-bottom-right-radius: var(--radius-xs);
+  text-align: left;
+  word-break: keep-all;
 }
 
 .msg.assistant .msg-bubble {
