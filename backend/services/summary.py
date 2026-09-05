@@ -47,6 +47,17 @@ def invalidate_cache() -> None:
     logger.info("[캐시 CLEAR] 데이터 변경으로 캐시 초기화됨")
 
 
+def _get_data_docs() -> list[dict]:
+    """data 컬렉션 문서를 메모리에 캐싱하여 중복 Firestore 읽기를 방지합니다."""
+    cached = _get_cached("data_docs")
+    if cached is not None:
+        return cached
+    logger.info("[Firestore READ] data_docs → get_all('data') 호출")
+    docs = get_all("data", order_by="date")
+    _set_cached("data_docs", docs)
+    return docs
+
+
 # ──────────────────────────────────────────────
 # 데이터 요약 (프롬프트 주입용)
 # ──────────────────────────────────────────────
@@ -60,8 +71,7 @@ def compute_summary() -> dict:
     if cached is not None:
         return cached
 
-    logger.info("[Firestore READ] compute_summary → get_all('data') 호출")
-    docs = get_all("data", order_by="date")
+    docs = _get_data_docs()
 
     if not docs:
         result = {
@@ -150,8 +160,7 @@ def compute_statistics() -> dict:
     if cached is not None:
         return cached
 
-    logger.info("[Firestore READ] compute_statistics → get_all('data') 호출")
-    docs = get_all("data", order_by="date")
+    docs = _get_data_docs()
 
     if not docs:
         result = {"by_line": {}, "by_weekday": {}, "by_month": {}}

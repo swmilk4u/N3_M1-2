@@ -414,52 +414,129 @@ async function deleteConv(e, id) {
 // ════════════════════════════════════════════════════════════════
 
 async function loadStats() {
+  const grid = document.getElementById('stats-summary-grid');
+  const trendContainer = document.querySelector('#trend-chart')?.parentElement;
+  const lineContainer = document.querySelector('#line-chart')?.parentElement;
+  const weekdayContainer = document.querySelector('#weekday-chart')?.parentElement;
+
+  // 1) 스켈레톤 로딩 UI 표시
+  if (grid) {
+    grid.innerHTML = Array(6).fill(0).map(() => `
+      <div class="stat-card" style="opacity:0.65">
+        <div class="stat-label">데이터 분석 중</div>
+        <div class="stat-value" style="font-size:1.2rem">로딩 중...</div>
+      </div>
+    `).join('');
+  }
+
+  const showChartLoading = (container, text) => {
+    if (!container) return;
+    container.style.position = 'relative';
+    let overlay = container.querySelector('.chart-loading-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'chart-loading-overlay';
+      overlay.style.cssText = 'position:absolute; inset:0; background:rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; border-radius:6px; font-size:13px; color:var(--text-muted); z-index:10; backdrop-filter:blur(2px);';
+      container.appendChild(overlay);
+    }
+    overlay.innerHTML = `<span style="display:inline-block; animation:spin 1s linear infinite; margin-right:8px;">⏳</span> ${text}`;
+  };
+
+  const removeChartLoading = (container) => {
+    const overlay = container?.querySelector('.chart-loading-overlay');
+    if (overlay) overlay.remove();
+  };
+
+  showChartLoading(trendContainer, '월별 추이 데이터를 분석 중입니다...');
+  showChartLoading(lineContainer, '노선별 데이터 집계 중...');
+  showChartLoading(weekdayContainer, '요일별 데이터 집계 중...');
+
   try {
-    const [summary, stats] = await Promise.all([
+    // 2) 요약 및 통계 독립적 병렬 호출 (하나가 실패해도 다른 하나는 렌더링)
+    const [summaryRes, statsRes] = await Promise.allSettled([
       apiFetch('/api/data/summary'),
       apiFetch('/api/data/statistics'),
     ]);
 
-    renderStatsSummaryGrid(summary);
-    renderTrendChart(stats.by_month);
-    renderLineChart(stats.by_line);
-    renderWeekdayChart(stats.by_weekday);
+    // 요약 그리드 렌더링
+    if (summaryRes.status === 'fulfilled' && summaryRes.value) {
+      renderStatsSummaryGrid(summaryRes.value);
+    } else {
+      if (grid) grid.innerHTML = `<div class="stat-card" style="grid-column: 1 / -1; color:var(--danger)">⚠️ 요약 지표를 불러오지 못했습니다.</div>`;
+    }
+
+    // 차트 라이브러리 가용성 체크
+    if (typeof Chart === 'undefined') {
+      throw new Error('Chart.js 라이브러리를 불러오지 못했습니다. 네트워크 연결을 확인해주세요.');
+    }
+
+    // 통계 차트 렌더링
+    if (statsRes.status === 'fulfilled' && statsRes.value) {
+      const stats = statsRes.value;
+      renderTrendChart(stats.by_month || {});
+      renderLineChart(stats.by_line || {});
+      renderWeekdayChart(stats.by_weekday || {});
+    } else {
+      const err = statsRes.reason?.message || '통계 API 오류';
+      [trendContainer, lineContainer, weekdayContainer].forEach(c => {
+        if (c) {
+          c.innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-muted); gap:8px;">
+              <div>⚠️ 통계 데이터를 불러오지 못했습니다 (${escapeHtml(err)})</div>
+              <button class="btn btn-secondary btn-sm" onclick="loadStats()">🔄 다시 시도</button>
+            </div>
+          `;
+        }
+      });
+    }
   } catch (err) {
     showToast('통계 로딩 실패: ' + err.message, 'error');
+    console.error('loadStats error:', err);
+  } finally {
+    removeChartLoading(trendContainer);
+    removeChartLoading(lineContainer);
+    removeChartLoading(weekdayContainer);
   }
 }
 
 function renderStatsSummaryGrid(s) {
   const grid = document.getElementById('stats-summary-grid');
-  const trendClass = s.trend.includes('상승') ? 'badge-up' : s.trend.includes('하락') ? 'badge-down' : 'badge-flat';
+  if (!grid || !s) return;
+
+  const trendStr = s.trend || '데이터 없음';
+  const trendClass = trendStr.includes('상승') ? 'badge-up' : trendStr.includes('하락') ? 'badge-down' : 'badge-flat';
+  const avg = s.metrics?.average ?? 0;
+  const mx = s.metrics?.max ?? 0;
+  const mn = s.metrics?.min ?? 0;
+
   grid.innerHTML = `
     <div class="stat-card">
       <div class="stat-label">데이터 기간</div>
-      <div class="stat-value" style="font-size:1rem">${s.period}</div>
+      <div class="stat-value" style="font-size:1rem">${escapeHtml(s.period || '-')}</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">총 레코드</div>
-      <div class="stat-value">${fmt(s.count)}</div>
+      <div class="stat-value">${fmt(s.count || 0)}</div>
       <div class="stat-sub">건</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">일평균 승하차</div>
-      <div class="stat-value">${fmt(s.metrics.average)}</div>
+      <div class="stat-value">${fmt(avg)}</div>
       <div class="stat-sub">명</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">최고 기록</div>
-      <div class="stat-value" style="color:var(--success)">${fmt(s.metrics.max)}</div>
+      <div class="stat-value" style="color:var(--success)">${fmt(mx)}</div>
       <div class="stat-sub">명</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">최저 기록</div>
-      <div class="stat-value" style="color:var(--danger)">${fmt(s.metrics.min)}</div>
+      <div class="stat-value" style="color:var(--danger)">${fmt(mn)}</div>
       <div class="stat-sub">명</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">최근 트렌드</div>
-      <div class="stat-value" style="font-size:1rem"><span class="badge ${trendClass}">${s.trend}</span></div>
+      <div class="stat-value" style="font-size:1rem"><span class="badge ${trendClass}">${escapeHtml(trendStr)}</span></div>
     </div>
   `;
 }
@@ -473,12 +550,16 @@ function getChartDefaults() {
 }
 
 function renderTrendChart(byMonth) {
+  const canvas = document.getElementById('trend-chart');
+  if (!canvas) return;
   const { textColor, gridColor } = getChartDefaults();
-  const labels = Object.keys(byMonth);
-  const values = Object.values(byMonth);
+  const labels = Object.keys(byMonth || {});
+  const values = Object.values(byMonth || {});
 
-  if (chartTrend) chartTrend.destroy();
-  chartTrend = new Chart(document.getElementById('trend-chart'), {
+  if (chartTrend) {
+    try { chartTrend.destroy(); } catch (e) {}
+  }
+  chartTrend = new Chart(canvas, {
     type: 'line',
     data: {
       labels,
@@ -506,13 +587,17 @@ function renderTrendChart(byMonth) {
 }
 
 function renderLineChart(byLine) {
+  const canvas = document.getElementById('line-chart');
+  if (!canvas) return;
   const { textColor, gridColor } = getChartDefaults();
-  const labels = Object.keys(byLine).slice(0, 8);
+  const labels = Object.keys(byLine || {}).slice(0, 8);
   const values = labels.map(k => byLine[k]);
   const colors = ['#6c63ff','#00d9ff','#ff6b9d','#4ade80','#facc15','#fb923c','#a78bfa','#34d399'];
 
-  if (chartLine) chartLine.destroy();
-  chartLine = new Chart(document.getElementById('line-chart'), {
+  if (chartLine) {
+    try { chartLine.destroy(); } catch (e) {}
+  }
+  chartLine = new Chart(canvas, {
     type: 'bar',
     data: {
       labels,
@@ -536,12 +621,16 @@ function renderLineChart(byLine) {
 }
 
 function renderWeekdayChart(byWeekday) {
+  const canvas = document.getElementById('weekday-chart');
+  if (!canvas) return;
   const { textColor, gridColor } = getChartDefaults();
-  const labels = Object.keys(byWeekday);
-  const values = Object.values(byWeekday);
+  const labels = Object.keys(byWeekday || {});
+  const values = Object.values(byWeekday || {});
 
-  if (chartWeekday) chartWeekday.destroy();
-  chartWeekday = new Chart(document.getElementById('weekday-chart'), {
+  if (chartWeekday) {
+    try { chartWeekday.destroy(); } catch (e) {}
+  }
+  chartWeekday = new Chart(canvas, {
     type: 'radar',
     data: {
       labels,

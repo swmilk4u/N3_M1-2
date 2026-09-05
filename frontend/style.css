@@ -843,6 +843,26 @@ body {
 /* ── 차트 ─────────────────────────────────────────────────── */
 .chart-container { position: relative; height: 300px; width: 100%; }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.chart-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-card);
+  opacity: 0.85;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  color: var(--text-muted);
+  z-index: 10;
+  backdrop-filter: blur(2px);
+}
+
 /* ── 배지 ─────────────────────────────────────────────────── */
 .badge {
   display: inline-flex;
