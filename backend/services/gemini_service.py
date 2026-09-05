@@ -9,7 +9,7 @@ from google import genai
 from google.genai import types
 
 MODEL      = "gemini-3.6-flash"
-MAX_TOKENS = 1024
+MAX_TOKENS = 8192
 
 _client: Optional[genai.Client] = None
 
@@ -124,6 +124,7 @@ def chat_with_context(
         response = client.models.generate_content(
             model=MODEL,
             contents=prompt,
+            config=config,
         )
         text = response.text or ""
 

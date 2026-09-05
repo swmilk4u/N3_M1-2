@@ -11,7 +11,7 @@ from openai import OpenAI
 _client: Optional[OpenAI] = None
 
 MODEL      = "gpt-4o-mini"
-MAX_TOKENS = 1024  # 과금 방지
+MAX_TOKENS = 4096
 
 
 def _get_client() -> OpenAI:
